@@ -1,0 +1,3 @@
+import { NextResponse } from 'next/server';
+import { createSessionToken, sessionCookie } from '@/lib/auth';
+export async function POST(req:Request){try{const {username,password}=await req.json();if(!process.env.APP_USERNAME||!process.env.APP_PASSWORD)return NextResponse.json({error:'Auth belum dikonfigurasi'}, {status:503});if(username!==process.env.APP_USERNAME||password!==process.env.APP_PASSWORD)return NextResponse.json({error:'Invalid credentials'},{status:401});const res=NextResponse.json({ok:true});res.cookies.set(sessionCookie,createSessionToken(),{httpOnly:true,sameSite:'lax',secure:process.env.NODE_ENV==='production',path:'/',maxAge:60*60*24*14});return res;}catch{return NextResponse.json({error:'Invalid request'},{status:400})}}

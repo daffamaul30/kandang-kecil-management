@@ -1,0 +1,2 @@
+import Page from '@/components/layout/Page';import {requireAuth} from '@/lib/auth';
+export default async function Settings(){await requireAuth();return <Page><h1 className="text-3xl font-bold text-brand-900">Pengaturan</h1><section className="mt-6 max-w-2xl rounded-2xl border border-brand-100 bg-white p-5 shadow-soft"><h2 className="font-semibold text-brand-900">Harga acuan simulasi</h2><p className="mt-2 text-sm text-stone-500">Simulasi menggunakan harga tetap Rp2.500 dan Rp3.000 per telur. Pengaturan lanjutan belum tersedia.</p></section></Page>}

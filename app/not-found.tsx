@@ -1,0 +1,1 @@
+export default function NotFound(){return <main className="flex min-h-screen items-center justify-center"><div className="text-center"><h1 className="text-2xl font-bold">Halaman tidak ditemukan</h1><a href="/dashboard" className="mt-3 inline-block text-brand-600">Kembali ke dashboard</a></div></main>}

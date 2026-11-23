@@ -1,0 +1,2 @@
+import ModulePage from '@/components/ModulePage';
+export default function Feeders(){return <div><ModulePage title="Automatic Feeder" description="Konfigurasi perangkat dan jadwal; data perangkat nyata belum terhubung." collection="feederSchedules" fields={[{name:'feederName',label:'Nama feeder',required:true},{name:'colonyName',label:'Koloni tujuan',required:true},{name:'time',label:'Waktu jadwal (HH:mm)',required:true},{name:'enabled',label:'Status jadwal',required:true,options:[{label:'Aktif',value:'true'},{label:'Nonaktif',value:'false'}]}]}/></div>}
