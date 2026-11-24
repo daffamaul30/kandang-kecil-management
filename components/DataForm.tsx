@@ -167,7 +167,13 @@ export default function DataForm({
       });
 
       if (res.ok) {
-        setMsg("Berhasil disimpan.");
+        const result = await res.json();
+
+        setMsg(
+          result.updated
+            ? "Catatan produksi sebelumnya berhasil diperbarui."
+            : "Berhasil disimpan.",
+        );
         form.reset();
 
         window.dispatchEvent(

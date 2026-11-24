@@ -18,11 +18,11 @@ import { useState } from "react";
 const nav = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Siklus", href: "/cycles", icon: RefreshCcw },
-  { label: "Koloni", href: "/colonies", icon: Users },
   { label: "Produksi Telur", href: "/production", icon: Egg },
-  { label: "Automatic Feeder", href: "/feeders", icon: Cpu },
+  { label: "Koloni", href: "/colonies", icon: Users },
+  // { label: "Automatic Feeder", href: "/feeders", icon: Cpu },
   { label: "Reports", href: "/reports", icon: ChartNoAxesCombined },
-  { label: "Pengaturan", href: "/settings", icon: Settings },
+  // { label: "Pengaturan", href: "/settings", icon: Settings },
 ];
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();

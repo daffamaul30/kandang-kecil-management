@@ -17,54 +17,31 @@ export default function Records({
   const [expenses, setExpenses] = useState<any[]>([]);
   const [detailBusy, setDetailBusy] = useState(false);
 
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDate, setEditDate] = useState("");
+  const [editColony, setEditColony] = useState("");
+  const [editCount, setEditCount] = useState("");
+  const [colonies, setColonies] = useState<any[]>([]);
+  const [editBusy, setEditBusy] = useState(false);
+  const [editMsg, setEditMsg] = useState("");
+
   async function load() {
     setBusy(true);
+
     const r = await fetch("/api/data/" + collection);
     setRows(r.ok ? await r.json() : []);
+
     setBusy(false);
   }
 
   useEffect(() => {
     load();
 
-    async function handleDataSaved(event: Event) {
+    function handleDataSaved(event: Event) {
       const customEvent = event as CustomEvent<{ collection: string }>;
-      const savedCollection = customEvent.detail?.collection;
 
-      // Refresh daftar utama
-      if (savedCollection === collection) {
+      if (customEvent.detail?.collection === collection) {
         load();
-      }
-
-      // Refresh detail siklus yang sedang terbuka
-      if (
-        collection === "cycles" &&
-        expandedCycle &&
-        (savedCollection === "eggProductions" || savedCollection === "expenses")
-      ) {
-        try {
-          const [p, e] = await Promise.all([
-            fetch("/api/data/eggProductions"),
-            fetch("/api/data/expenses"),
-          ]);
-
-          const productionData = p.ok ? await p.json() : [];
-          const expenseData = e.ok ? await e.json() : [];
-
-          setProductions(
-            productionData.filter(
-              (row: any) => String(row.cycleId) === expandedCycle,
-            ),
-          );
-
-          setExpenses(
-            expenseData.filter(
-              (row: any) => String(row.cycleId) === expandedCycle,
-            ),
-          );
-        } catch (error) {
-          console.error("Gagal memperbarui detail siklus:", error);
-        }
       }
     }
 
@@ -73,7 +50,80 @@ export default function Records({
     return () => {
       window.removeEventListener("data-saved", handleDataSaved);
     };
-  }, [collection, expandedCycle]);
+  }, [collection]);
+
+  useEffect(() => {
+    if (collection !== "eggProductions") return;
+
+    async function loadColonies() {
+      try {
+        const r = await fetch("/api/data/colonies");
+
+        if (r.ok) {
+          setColonies(await r.json());
+        }
+      } catch (error) {
+        console.error("Gagal memuat koloni:", error);
+      }
+    }
+
+    loadColonies();
+  }, [collection]);
+
+  function startEdit(row: any) {
+    setEditingId(String(row._id));
+    setEditDate(String(row.date || "").slice(0, 10));
+    setEditColony(row.colonyName || "");
+    setEditCount(String(row.count ?? ""));
+    setEditMsg("");
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditMsg("");
+  }
+
+  async function saveEdit(id: string) {
+    setEditBusy(true);
+    setEditMsg("");
+
+    try {
+      const r = await fetch("/api/data/" + collection, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          _id: id,
+          date: editDate,
+          colonyName: editColony,
+          count: Number(editCount),
+        }),
+      });
+
+      const result = await r.json();
+
+      if (!r.ok) {
+        setEditMsg(result.error || "Gagal memperbarui catatan.");
+        return;
+      }
+
+      setEditingId(null);
+
+      await load();
+
+      window.dispatchEvent(
+        new CustomEvent("data-saved", {
+          detail: { collection },
+        }),
+      );
+    } catch (error) {
+      console.error(error);
+      setEditMsg("Terjadi kesalahan saat memperbarui data.");
+    } finally {
+      setEditBusy(false);
+    }
+  }
 
   async function del(id: string) {
     if (!confirm("Hapus data ini?")) return;
@@ -85,7 +135,7 @@ export default function Records({
     });
 
     if (r.ok) {
-      load();
+      await load();
 
       window.dispatchEvent(
         new CustomEvent("data-saved", {
@@ -119,7 +169,9 @@ export default function Records({
         productionData.filter((row: any) => String(row.cycleId) === id),
       );
 
-      setExpenses(expenseData.filter((row: any) => String(row.cycleId) === id));
+      setExpenses(
+        expenseData.filter((row: any) => String(row.cycleId) === id),
+      );
     } catch {
       setProductions([]);
       setExpenses([]);
@@ -130,7 +182,10 @@ export default function Records({
 
   const cols = rows.length
     ? Object.keys(rows[0])
-        .filter((k) => !["_id", "createdAt", "cycleId"].includes(k))
+        .filter(
+          (k) =>
+            !["_id", "createdAt", "updatedAt", "cycleId"].includes(k),
+        )
         .slice(0, 6)
     : [];
 
@@ -159,7 +214,7 @@ export default function Records({
             <tbody>
               {rows.map((row) => (
                 <Fragment key={row._id}>
-                  <tr key={row._id} className="border-t border-stone-100">
+                  <tr className="border-t border-stone-100">
                     {cols.map((c) => (
                       <td className="p-2" key={c}>
                         {typeof row[c] === "object" && row[c] !== null
@@ -184,6 +239,15 @@ export default function Records({
                         </button>
                       )}
 
+                      {collection === "eggProductions" && (
+                        <button
+                          className="mr-3 text-brand-700"
+                          onClick={() => startEdit(row)}
+                        >
+                          Edit
+                        </button>
+                      )}
+
                       <button
                         className="text-red-600"
                         onClick={() => del(row._id)}
@@ -193,9 +257,97 @@ export default function Records({
                     </td>
                   </tr>
 
+                  {collection === "eggProductions" &&
+                    editingId === String(row._id) && (
+                      <tr>
+                        <td colSpan={cols.length + 1} className="bg-stone-50 p-4">
+                          <div className="space-y-3">
+                            <h3 className="font-semibold text-brand-900">
+                              Edit Catatan Produksi
+                            </h3>
+
+                            <div className="grid gap-3 sm:grid-cols-3">
+                              <label className="text-sm font-medium">
+                                Tanggal
+                                <input
+                                  type="date"
+                                  value={editDate}
+                                  onChange={(e) =>
+                                    setEditDate(e.target.value)
+                                  }
+                                  className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-3"
+                                />
+                              </label>
+
+                              <label className="text-sm font-medium">
+                                Koloni
+                                <select
+                                  value={editColony}
+                                  onChange={(e) =>
+                                    setEditColony(e.target.value)
+                                  }
+                                  className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-3"
+                                >
+                                  <option value="" disabled>
+                                    Pilih koloni
+                                  </option>
+
+                                  {colonies.map((colony: any) => (
+                                    <option
+                                      key={colony._id}
+                                      value={colony.name}
+                                    >
+                                      {colony.name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+
+                              <label className="text-sm font-medium">
+                                Jumlah telur
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={editCount}
+                                  onChange={(e) =>
+                                    setEditCount(e.target.value)
+                                  }
+                                  className="mt-1 w-full rounded-xl border border-stone-200 bg-white p-3"
+                                />
+                              </label>
+                            </div>
+
+                            {editMsg && (
+                              <p className="rounded-xl bg-red-50 p-3 text-sm text-red-600">
+                                {editMsg}
+                              </p>
+                            )}
+
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                onClick={() => saveEdit(String(row._id))}
+                                disabled={editBusy}
+                                className="rounded-xl bg-brand-600 px-4 py-2 font-semibold text-white disabled:opacity-50"
+                              >
+                                {editBusy ? "Menyimpan…" : "Simpan perubahan"}
+                              </button>
+
+                              <button
+                                onClick={cancelEdit}
+                                disabled={editBusy}
+                                className="rounded-xl border border-stone-200 px-4 py-2"
+                              >
+                                Batal
+                              </button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+
                   {collection === "cycles" &&
                     expandedCycle === String(row._id) && (
-                      <tr key={`${row._id}-detail`}>
+                      <tr>
                         <td
                           colSpan={cols.length + 1}
                           className="bg-stone-50 p-4"
