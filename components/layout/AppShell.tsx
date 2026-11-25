@@ -4,7 +4,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  Users,
+  Bird,
   Egg,
   RefreshCcw,
   Cpu,
@@ -19,9 +19,9 @@ const nav = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Siklus", href: "/cycles", icon: RefreshCcw },
   { label: "Produksi Telur", href: "/production", icon: Egg },
-  { label: "Koloni", href: "/colonies", icon: Users },
-  // { label: "Automatic Feeder", href: "/feeders", icon: Cpu },
+  { label: "Koloni", href: "/colonies", icon: Bird },
   { label: "Reports", href: "/reports", icon: ChartNoAxesCombined },
+  { label: "Automatic Feeder", href: "/feeders", icon: Cpu },
   // { label: "Pengaturan", href: "/settings", icon: Settings },
 ];
 export default function AppShell({ children }: { children: React.ReactNode }) {
